@@ -191,7 +191,7 @@ im.save('CdTe_Training_Image_L.tif')
 
 image_file = "CdTe_Training_Image_L.tif" #Image file used to obtain the training sets
 # =============================================================================
-path = "YOUR/PATH/" # Insert the path of training image "CdTe_Training_Image", this will be your working directory
+path = r"C:\Users\victa\OneDrive\Documents\GitHub\2025_Hackathon" # Insert the path of training image "CdTe_Training_Image", this will be your working directory
 training_set, testing_set = get_testing_training_sets(image_file, SIZE, 100)
 
 train_images = preprocess_images(training_set, SIZE, SIGMA)
@@ -220,7 +220,7 @@ assert batch_size >= num_examples_to_generate
 for test_batch in test_dataset.take(1):
     test_sample = test_batch[0:num_examples_to_generate, :, :, :]
 
-generate_images(model, 0, test_sample)  # rerun this cell after 50 epochs steps
+# generate_images(model, 0, test_sample)  # rerun this cell after 50 epochs steps
 
 for epoch in range(1, epochs + 1):
     start_time = time.time()
@@ -235,7 +235,7 @@ for epoch in range(1, epochs + 1):
     display.clear_output(wait=False)
     print('Epoch: {}, Test set ELBO: {}, time elapse for current epoch: {}'
           .format(epoch, elbo, end_time - start_time))
-    generate_images(model, epoch, test_sample)
+    # generate_images(model, epoch, test_sample)
 
 #model.save(path + image_file.strip(".tif") + '_Size{}_SIGMA{}_epochs{}_latentdim{}.keras'.format(SIZE, SIGMA, epochs,
 #                                                                                               latent_dim))

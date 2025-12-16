@@ -1,0 +1,5 @@
+conda create --name 2025_Mic_Hackathon python=3.12
+
+conda activate 2025_Mic_Hackathon
+
+conda env update --name myenv --file 2025_Mic_Hackathon_VictoriaAugoustides_Windows.yaml
