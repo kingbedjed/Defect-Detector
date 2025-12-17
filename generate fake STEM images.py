@@ -19,8 +19,8 @@ def generate_stem_image_with_continuous_gb(
     lattice_angle_deg=-2,
     gb_misorientation_deg=2,
     
-    gb_angle=np.deg2rad(-10),
-    gb_height=0.8, # 0.75 (0 to 1)
+    gb_angle=np.deg2rad(15),
+    gb_height=0.2, # 0.75 (0 to 1)
     # gb_angle=np.deg2rad(random.uniform(10,20)),
     # gb_height = random.uniform(0,1),
                 
@@ -36,8 +36,8 @@ def generate_stem_image_with_continuous_gb(
     noise_level=0.2,
     gauss_sigma=2,
     
-    n_vacancies=3,
-    n_interstitials=3,
+    n_vacancies=6,
+    n_interstitials=6,
     
     seed=None
 ):
@@ -152,7 +152,7 @@ def generate_stem_image_with_continuous_gb(
 
 savepath = r"C:\Users\proks\OneDrive\Documents\GitHub\2025_Hackathon\generated artificial data".replace("\\", "/")
 
-seed = 60
+seed = 20
 
 if __name__ == "__main__":
     img = generate_stem_image_with_continuous_gb(seed=seed)
