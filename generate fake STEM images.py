@@ -161,7 +161,7 @@ savepath = r"C:\Users\proks\OneDrive\Documents\GitHub\2025_Hackathon\generated a
 seed = 3  # seed for reproducibility
 
 if __name__ == "__main__":
-    # Generate synthetic STEM image
+    # Generate fake STEM image
     img = generate_stem_image_with_continuous_gb(seed=seed)
     
     # Plot and save image
