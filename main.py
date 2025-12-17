@@ -147,14 +147,16 @@ def main(path_name, chunk_size):
     # Load image
     image = load_images(path_name)
 
-    # Chunk image
-    image_chunks = chunk_image(image, chunk_size)
+    # # Chunk image
+    # image_chunks = chunk_image(image, chunk_size)
 
-    # Find defects in chunks
-    defects_in_chunks = find_defects_array(image_chunks)
+    # # Find defects in chunks
+    # defects_in_chunks = find_defects_array(image_chunks)
 
-    # Transform bounding boxes to original image coordinates
-    bounding_boxes = transform_bounding_boxes(defects_in_chunks, chunk_size)
+    # # Transform bounding boxes to original image coordinates
+    # bounding_boxes = transform_bounding_boxes(defects_in_chunks, chunk_size)
+
+    bounding_boxes = find_defects(image)
 
     # Display bounding boxes on original image
     display_bounding_boxes(image, bounding_boxes)
