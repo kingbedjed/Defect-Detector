@@ -26,6 +26,16 @@ if __name__ == "__main__":
     labels_train_dir = labels_dir / "train"
     labels_train_dir.mkdir(exist_ok=True)
 
+    ## create training data yaml
+    text = f"""
+train: {images_train_dir.resolve()}
+val: {images_validation_dir.resolve()}
+nc: 3
+names: ['grain_boundary', 'vacancy', 'interstitial']
+    """
+    with open(training_data_dir / "training_data.yaml", 'w') as f:
+        f.write(text.strip())
+
     rotations = [0, 90, 180, 270]
     reflections = ['none', 'horizontal', 'vertical', 'both']
 
