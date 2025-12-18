@@ -66,7 +66,9 @@ def _find_random_defect_boxes(image, num_defects=None):
         x_min = np.random.randint(0, width - box_width)
         y_min = np.random.randint(0, height - box_height)
         rotation = np.random.uniform(0, 360)  # Random rotation angle
-        boxes.append((x_min, y_min, box_width, box_height, rotation))
+        # boxes.append((x_min, y_min, box_width, box_height, rotation))
+        # boxes are in format (class_id, x_1, y_1, x_2, y_2, x_3, y_3, x_4, y_4)
+        class_id = np.random.randint(0, 3)  # Random class id (0, 1 or 2)
     return boxes
 
 def find_defects(image):
