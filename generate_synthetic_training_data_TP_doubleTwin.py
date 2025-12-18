@@ -3,6 +3,10 @@
 # What does background do in this code?
 # how does this code draw the bounding boxes?
 
+A twin boundary changes the angle of atoms along a row in the lattice
+I made it into a double twin boundary by making it change the angle for just one line
+Adjust my code so that it makes a triple twin boundary by changing the angle back and forth for 3 lines in a row
+
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter  # for Gaussian blurring
@@ -108,12 +112,6 @@ def generate_stem_image_with_continuous_gb(
     bottom_right_y = _clip_int(m * img_size + b - half_width, img_size)
     bottom_right_x = _clip_int((bottom_right_y - (b - half_width)) / m, img_size)
     
-    print()
-    print(top_left_x, top_left_y)
-    print(bottom_left_x, bottom_left_y)
-    print(top_right_x, top_right_y)
-    print(bottom_right_x, bottom_right_y)
-
     # Append bounding box for grain boundary to bounding box list
     bounding_boxes.append(
         (classes['gb'],
@@ -404,26 +402,26 @@ if __name__ == "__main__":
             y + [y[0]],
             color=color, linewidth=.5)
     axis.axis("off")
-    figure.savefig(savepath+'/STEM_' + str(seed) + '.jpeg', bbox_inches="tight", dpi=300)
+    # figure.savefig(savepath+'/STEM_' + str(seed) + '.jpeg', bbox_inches="tight", dpi=300)
     plt.show()
 
     image = Image.fromarray((img * 255).astype(np.uint8))
-    image.save(savepath+'/STEM_' + str(seed) + '.png')
+    # image.save(savepath+'/STEM_' + str(seed) + '.png')
 
-    # Save bounding boxes to text file for yolo input
-    np.savetxt(
-                    savepath+'/STEM_' + str(seed) + '_bboxes.txt',
-                    yolo_bounding_boxes,
-                    fmt='%d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f'
-                )
+    # # Save bounding boxes to text file for yolo input
+    # np.savetxt(
+    #                 savepath+'/STEM_' + str(seed) + '_bboxes.txt',
+    #                 yolo_bounding_boxes,
+    #                 fmt='%d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f'
+    #             )
 
     # save metadata to CSV
     meta_df = pd.DataFrame([metadata])
-    meta_df.to_csv(savepath + f"/STEM_{seed}_metadata.csv", index=False)
+    # meta_df.to_csv(savepath + f"/STEM_{seed}_metadata.csv", index=False)
 
     rotations = [0, 90, 180, 270]  # degrees
     reflections = ['none', 'horizontal', 'vertical', 'both']
-##%%
+#%%
     # --- Apply transformations and save images ---
     for rot in rotations:
         for refl in reflections:
