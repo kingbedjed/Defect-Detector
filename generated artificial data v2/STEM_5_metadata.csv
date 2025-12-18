@@ -1,0 +1,2 @@
+seed,image_size,line_spacing,atom_spacing,dumbbell_separation,dumbbell_radius,background_intensity,gb_misorientation_deg,atom_tilt_deg,lattice_angle_deg,gb_angle,gb_height,atom_intensity,interstitial_r,interstitial_intensity,noise_level,gauss_sigma,n_vacancies,n_interstitials
+5,768,20,20,4.00,4.00,1.00,0,224.24,267.04,4.66,0.80,2.94,3.98,0.89,0.01,3.47,3,0
