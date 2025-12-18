@@ -12,7 +12,7 @@ import pandas as pd
 import math # For math.ceil in the bounding box widths
 
 def generate_stem_image_with_continuous_gb(
-    
+
     # parameters to keep constant
     img_size=768,              # Size of the square image (pixels)
     line_spacing=20,           # Spacing between lattice lines
@@ -23,9 +23,9 @@ def generate_stem_image_with_continuous_gb(
     background=1.0,            # Base background intensity
     gb_misorientation_deg=0,
     seed=None                  # Random seed for reproducibility
-    
+
 ):
-    
+
     # Set random seed if provided
     # this ensures all randomized parameters are consistent according to seed #
     if seed is not None:
@@ -40,7 +40,7 @@ def generate_stem_image_with_continuous_gb(
     def _rotate_about_line(point, line_point, angle):
         R = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle),  np.cos(angle)]]) # 2D rotation matrix
         return line_point + R @ (point - line_point)
-    
+
     # parameters to randomize (and save based on seed)
     atom_tilt_deg=random.uniform(0,360)                      # Atom tilt
     lattice_angle_deg=random.uniform(0,360)                  # lattice rotation
@@ -53,17 +53,17 @@ def generate_stem_image_with_continuous_gb(
     gauss_sigma=random.uniform(3,4)                          # Gaussian blur applied to final image
     n_vacancies=random.randint(0,8)                          # Number of missing atoms
     n_interstitials=random.randint(0,8)                      # Number of extra interstitial atoms
-    
+
     # calculate angle at which to rotate dumbell atoms across gb
     atom_tilt_refl_deg=2*np.rad2deg(gb_angle)-atom_tilt_deg
-    
+
     bounding_boxes = [] # to store bounding boxes of defects in format (class, x1, y1, x2, y2, x3, y3, x4, y4)
     classes = {
         'gb': 0,
         'vacancy': 1,
         'interstitial': 2
     }
-    
+
     # Create empty image with uniform background intensity
     img = np.full((img_size, img_size), background, dtype=float)
 
@@ -71,36 +71,19 @@ def generate_stem_image_with_continuous_gb(
     m = np.tan(gb_angle)
     b = img_size * gb_height
 
-    # # Add grain boundary bounding box keeping the coords within image bounds
-    # top_left_y = np.clip(b + line_spacing, 0, img_size)
-    # top_left_x = (top_left_y - (b + line_spacing)) / m
-    # bottom_left_y = np.clip(b - line_spacing, 0, img_size)
-    # bottom_left_x = (bottom_left_y - (b - line_spacing)) / m
-    # top_right_y = np.clip(m * img_size + b + line_spacing, 0, img_size)
-    # top_right_x = (top_right_y - (b + line_spacing)) / m
-    # bottom_right_y = np.clip(m * img_size + b - line_spacing, 0, img_size)
-    # bottom_right_x = (bottom_right_y - (b - line_spacing)) / m
-    # bounding_boxes.append(
-    #     (classes['gb'],
-    #      bottom_left_x, bottom_left_y,
-    #      bottom_right_x, bottom_right_y,
-    #      top_right_x, top_right_y,
-    #      top_left_x, top_left_y
-    #     )
-    # )
-
     # Add grain boundary bounding box keeping coords within image bounds
-    top_left_y = _clip_int(b + line_spacing, img_size)
-    top_left_x = _clip_int((top_left_y - (b + line_spacing)) / m, img_size)
+    half_width = np.sqrt(line_spacing**2 + atom_spacing**2) * 1.3
+    top_left_y = _clip_int(b + half_width, img_size)
+    top_left_x = _clip_int((top_left_y - (b + half_width)) / m, img_size)
 
-    bottom_left_y = _clip_int(b - line_spacing, img_size)
-    bottom_left_x = _clip_int((bottom_left_y - (b - line_spacing)) / m, img_size)
+    bottom_left_y = _clip_int(b - half_width, img_size)
+    bottom_left_x = _clip_int((bottom_left_y - (b - half_width)) / m, img_size)
 
-    top_right_y = _clip_int(m * img_size + b + line_spacing, img_size)
-    top_right_x = _clip_int((top_right_y - (b + line_spacing)) / m, img_size)
+    top_right_y = _clip_int(m * img_size + b + half_width, img_size)
+    top_right_x = _clip_int((top_right_y - (b + half_width)) / m, img_size)
 
-    bottom_right_y = _clip_int(m * img_size + b - line_spacing, img_size)
-    bottom_right_x = _clip_int((bottom_right_y - (b - line_spacing)) / m, img_size)
+    bottom_right_y = _clip_int(m * img_size + b - half_width, img_size)
+    bottom_right_x = _clip_int((bottom_right_y - (b - half_width)) / m, img_size)
 
     # Append bounding box for grain boundary to bounding box list
     bounding_boxes.append(
@@ -191,7 +174,7 @@ def generate_stem_image_with_continuous_gb(
                  _clip_int((pos[0] - line_spacing), img_size), _clip_int((pos[1] + line_spacing), img_size))
             )
             continue # skip vacancies
-            
+
         cx, cy = pos
         dx = dumbbell_separation * np.cos(tilt)
         dy = dumbbell_separation * np.sin(tilt)
@@ -215,7 +198,7 @@ def generate_stem_image_with_continuous_gb(
     interstitial_sites = list(set(interstitial_sites))
     chosen = random.sample(interstitial_sites,
                            min(n_interstitials, len(interstitial_sites)))
-    
+
     # chosen = coordinates for interstitial sites
     # Draw interstitial atoms at chosen coordinates
     box_width = int(math.ceil(line_spacing / 2))
@@ -233,7 +216,7 @@ def generate_stem_image_with_continuous_gb(
              _clip_int((x + box_width), img_size), _clip_int((y - box_width), img_size),
              _clip_int((x + box_width), img_size), _clip_int((y + box_width), img_size),
              _clip_int((x - box_width), img_size), _clip_int((y + box_width), img_size)))
-        
+
         rr, cc = disk((y, x), radius=interstitial_r, shape=img.shape)
         img[rr, cc] += atom_intensity * interstitial_intensity
 
@@ -266,9 +249,9 @@ def rotate_flip_image_and_bboxes(image, bounding_boxes, rot, refl):
     rotated_img = image.rotate(rot, expand=True)
     # Flip image
     if refl == 'horizontal' or refl == 'both':
-        rotated_img = rotated_img.transpose(Image.FLIP_LEFT_RIGHT)
+        rotated_img = rotated_img.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
     if refl == 'vertical' or refl == 'both':
-        rotated_img = rotated_img.transpose(Image.FLIP_TOP_BOTTOM)
+        rotated_img = rotated_img.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
 
     transformed_bboxes = []
 
@@ -361,7 +344,7 @@ seed = 1  # seed for reproducibility
 
 if __name__ == "__main__":
     # Generate fake STEM image
-    img_sz = 768  
+    img_sz = 768
     img, bounding_boxes, metadata = generate_stem_image_with_continuous_gb(
                                     seed=seed, img_size=img_sz)
     yolo_bounding_boxes = yolo_format_bounding_boxes(bounding_boxes, img_sz)
@@ -370,7 +353,7 @@ if __name__ == "__main__":
     # Plot and save image
     figure, axis = plt.subplots(figsize=(5,5), dpi=300)
     axis.imshow(img, cmap="gray")
-    
+
     # show the bounding boxes color coded by class
     for box in bounding_boxes:
         cls = box[0]
@@ -389,24 +372,24 @@ if __name__ == "__main__":
     axis.axis("off")
     figure.savefig(savepath+'/STEM_' + str(seed) + '.jpeg', bbox_inches="tight", dpi=300)
     plt.show()
-    
+
     image = Image.fromarray((img * 255).astype(np.uint8))
     image.save(savepath+'/STEM_' + str(seed) + '.png')
-    
+
     # Save bounding boxes to text file for yolo input
     np.savetxt(
                     savepath+'/STEM_' + str(seed) + '_bboxes.txt',
                     yolo_bounding_boxes,
                     fmt='%d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f'
-                )    
-    
+                )
+
     # save metadata to CSV
     meta_df = pd.DataFrame([metadata])
     meta_df.to_csv(savepath + f"/STEM_{seed}_metadata.csv", index=False)
 
     rotations = [0, 90, 180, 270]  # degrees
     reflections = ['none', 'horizontal', 'vertical', 'both']
-    
+
     # --- Apply transformations and save images ---
     for rot in rotations:
         for refl in reflections:
@@ -418,7 +401,7 @@ if __name__ == "__main__":
 
             # Save the transformed image
             transformed_img.save(savepath+'/STEM_' + str(seed) + f'_rot{rot}_refl{refl}.png')
-            
+
             # Save transformed bounding boxes to txt
             np.savetxt(
                     savepath + f'/STEM_{seed}_rot{rot}_refl{refl}_bboxes.txt',
