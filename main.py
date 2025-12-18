@@ -1,7 +1,6 @@
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 
 def load_images(path_name):
     """Loads images from the specified path and returns them as a numpy array.
@@ -57,7 +56,7 @@ def _find_random_defect_boxes(image, num_defects=None):
         list: List of bounding boxes in the format (x_min, y_min, width, height, [rotation]).
     """
     if num_defects is None:
-        num_defects = np.random.randint(0, 5)  # Randomly choose 1 to 3 defects
+        num_defects = np.random.randint(5, 10)
     height, width = image.shape
     boxes = []
     for _ in range(num_defects):
@@ -66,9 +65,16 @@ def _find_random_defect_boxes(image, num_defects=None):
         x_min = np.random.randint(0, width - box_width)
         y_min = np.random.randint(0, height - box_height)
         rotation = np.random.uniform(0, 360)  # Random rotation angle
-        # boxes.append((x_min, y_min, box_width, box_height, rotation))
         # boxes are in format (class_id, x_1, y_1, x_2, y_2, x_3, y_3, x_4, y_4)
         class_id = np.random.randint(0, 3)  # Random class id (0, 1 or 2)
+        box = (class_id,
+               x_min, y_min,
+               x_min + box_width * np.cos(np.radians(rotation)), y_min + box_width * np.sin(np.radians(rotation)),
+               x_min + box_width * np.cos(np.radians(rotation)) - box_height * np.sin(np.radians(rotation)),
+               y_min + box_width * np.sin(np.radians(rotation)) + box_height * np.cos(np.radians(rotation)),
+               x_min - box_height * np.sin(np.radians(rotation)),
+               y_min + box_height * np.cos(np.radians(rotation)))
+        boxes.append(box)
     return boxes
 
 def find_defects(image):
@@ -83,48 +89,6 @@ def find_defects(image):
     defects = _find_random_defect_boxes(image)
     return defects
 
-def find_defects_array(image_array):
-    """Locate defects in each image chunk of the input array.
-
-    Args:
-        image_array (numpy.ndarray): 4D array of shape (num_chunks_y, num_chunks_x, chunk_size, chunk_size)
-                                     containing the image chunks.
-    Returns:
-        defects: An array of lists containing bounding boxes for detected defects in each chunk.
-    """
-    array_shape = image_array.shape[:2]
-    defects = np.empty(array_shape, dtype=object)
-
-    for i in np.ndindex(array_shape):
-        chunk = image_array[i]
-        defects[i] = find_defects(chunk)
-
-    return defects
-
-def transform_bounding_boxes(defects, chunk_size):
-    """Transforms bounding boxes from chunk coordinates to original image coordinates.
-
-    Args:
-        defects (numpy.ndarray): 2D array of shape (num_chunks_y, num_chunks_x) containing lists of bounding boxes.
-        chunk_size (int): Size of each chunk (both width and height).
-    Returns:
-        list: List of transformed bounding boxes in the format (x_min, y_min, width, height, [rotation]).
-    """
-    transformed_boxes = []
-    num_chunks_y, num_chunks_x = defects.shape
-
-    for i in range(num_chunks_y):
-        for j in range(num_chunks_x):
-            chunk_boxes = defects[i, j]
-            for box in chunk_boxes:
-                x_min, y_min, width, height, rotation = box
-                # Transform coordinates to original image
-                x_min_global = x_min + j * chunk_size
-                y_min_global = y_min + i * chunk_size
-                transformed_boxes.append((x_min_global, y_min_global, width, height, rotation))
-
-    return transformed_boxes
-
 def display_bounding_boxes(image, bounding_boxes):
     """Displays the image with bounding boxes overlaid.
 
@@ -137,26 +101,25 @@ def display_bounding_boxes(image, bounding_boxes):
     ax.imshow(image, cmap='gray')
 
     for box in bounding_boxes:
-        x_min, y_min, width, height, rotation = box
-        rect = patches.Rectangle((x_min, y_min), width, height,
-                                 angle=rotation, linewidth=1,
-                                 edgecolor='r', facecolor='none')
-        ax.add_patch(rect)
+        cls = box[0]
+        x = list(box[1::2])
+        y = list(box[2::2])
+        if cls == 0:
+            color = 'red'  # grain boundary
+        elif cls == 1:
+            color = 'blue' # vacancy
+        elif cls == 2:
+            color = 'green' # interstitial
+        ax.plot(
+            x + [x[0]],
+            y + [y[0]],
+            color=color, linewidth=.5)
 
     plt.show()
 
-def main(path_name, chunk_size):
+def main(path_name):
     # Load image
     image = load_images(path_name)
-
-    # # Chunk image
-    # image_chunks = chunk_image(image, chunk_size)
-
-    # # Find defects in chunks
-    # defects_in_chunks = find_defects_array(image_chunks)
-
-    # # Transform bounding boxes to original image coordinates
-    # bounding_boxes = transform_bounding_boxes(defects_in_chunks, chunk_size)
 
     bounding_boxes = find_defects(image)
 
@@ -166,11 +129,10 @@ def main(path_name, chunk_size):
 
 if __name__ == "__main__":
     import sys
-    if len(sys.argv) != 3:
-        print("Usage: python main.py <path_to_image> <chunk_size>")
+    if len(sys.argv) != 2:
+        print("Usage: python main.py <path_to_image>")
         sys.exit(1)
 
     path_name = sys.argv[1]
-    chunk_size = int(sys.argv[2])
 
-    main(path_name, chunk_size)
+    main(path_name)

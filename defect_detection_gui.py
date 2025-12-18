@@ -15,11 +15,9 @@ Usage:
 
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
-from PIL import Image, ImageTk
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import matplotlib.patches as patches
 import time
 
 # Import functions from main.py
@@ -239,14 +237,19 @@ class DefectDetectionGUI:
         # Add bounding boxes if provided
         if bboxes is not None and len(bboxes) > 0:
             for box in bboxes:
-                x_min, y_min, width, height, rotation = box
-                rect = patches.Rectangle(
-                    (x_min, y_min), width, height,
-                    angle=rotation, linewidth=2,
-                    edgecolor='red', facecolor='none',
-                    alpha=0.8
-                )
-                self.ax.add_patch(rect)
+                cls = box[0]
+                x = list(box[1::2])
+                y = list(box[2::2])
+                if cls == 0:
+                    color = 'red'  # grain boundary
+                elif cls == 1:
+                    color = 'blue' # vacancy
+                elif cls == 2:
+                    color = 'green' # interstitial
+                self.ax.plot(
+                    x + [x[0]],
+                    y + [y[0]],
+                    color=color, linewidth=.5)
 
         self.canvas.draw()
 
