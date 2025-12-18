@@ -9,12 +9,7 @@ from skimage.draw import disk               # to draw circular atoms/interstitia
 import random
 from PIL import Image
 import pandas as pd
-# import random 
-
-# Function to rotate a point around a given line point by a specified angle
-def rotate_about_line(point, line_point, angle):
-    R = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle),  np.cos(angle)]]) # 2D rotation matrix
-    return line_point + R @ (point - line_point)
+import math # For math.ceil in the bounding box widths
 
 def generate_stem_image_with_continuous_gb(
     
@@ -23,6 +18,7 @@ def generate_stem_image_with_continuous_gb(
     line_spacing=20,           # Spacing between lattice lines
     atom_spacing=20,           # Spacing between atoms along lines
     dumbbell_separation=4.0,   # Distance between the two "lobes" of a dumbbell atom
+    interstitial_r = 4,         # Radius of interstitial atoms
     dumbbell_radius=4.0,       # Radius of each dumbbell lobe
     background=1.0,            # Base background intensity
     gb_misorientation_deg=0,
@@ -35,6 +31,15 @@ def generate_stem_image_with_continuous_gb(
     if seed is not None:
         np.random.seed(seed)
         random.seed(seed)
+
+    def _clip_int(val, max_size):
+        """Clip float to valid pixel index and cast to int."""
+        return int(np.clip(val, 0, max_size - 1))
+
+    # Function to rotate a point around a given line point by a specified angle
+    def _rotate_about_line(point, line_point, angle):
+        R = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle),  np.cos(angle)]]) # 2D rotation matrix
+        return line_point + R @ (point - line_point)
     
     # parameters to randomize (and save based on seed)
     atom_tilt_deg=random.uniform(0,360)                      # Atom tilt
@@ -66,15 +71,38 @@ def generate_stem_image_with_continuous_gb(
     m = np.tan(gb_angle)
     b = img_size * gb_height
 
-    # Add grain boundary bounding box keeping the coords within image bounds
-    top_left_y = np.clip(b + line_spacing, 0, img_size)
-    top_left_x = (top_left_y - (b + line_spacing)) / m
-    bottom_left_y = np.clip(b - line_spacing, 0, img_size)
-    bottom_left_x = (bottom_left_y - (b - line_spacing)) / m
-    top_right_y = np.clip(m * img_size + b + line_spacing, 0, img_size)
-    top_right_x = (top_right_y - (b + line_spacing)) / m
-    bottom_right_y = np.clip(m * img_size + b - line_spacing, 0, img_size)
-    bottom_right_x = (bottom_right_y - (b - line_spacing)) / m
+    # # Add grain boundary bounding box keeping the coords within image bounds
+    # top_left_y = np.clip(b + line_spacing, 0, img_size)
+    # top_left_x = (top_left_y - (b + line_spacing)) / m
+    # bottom_left_y = np.clip(b - line_spacing, 0, img_size)
+    # bottom_left_x = (bottom_left_y - (b - line_spacing)) / m
+    # top_right_y = np.clip(m * img_size + b + line_spacing, 0, img_size)
+    # top_right_x = (top_right_y - (b + line_spacing)) / m
+    # bottom_right_y = np.clip(m * img_size + b - line_spacing, 0, img_size)
+    # bottom_right_x = (bottom_right_y - (b - line_spacing)) / m
+    # bounding_boxes.append(
+    #     (classes['gb'],
+    #      bottom_left_x, bottom_left_y,
+    #      bottom_right_x, bottom_right_y,
+    #      top_right_x, top_right_y,
+    #      top_left_x, top_left_y
+    #     )
+    # )
+
+    # Add grain boundary bounding box keeping coords within image bounds
+    top_left_y = _clip_int(b + line_spacing, img_size)
+    top_left_x = _clip_int((top_left_y - (b + line_spacing)) / m, img_size)
+
+    bottom_left_y = _clip_int(b - line_spacing, img_size)
+    bottom_left_x = _clip_int((bottom_left_y - (b - line_spacing)) / m, img_size)
+
+    top_right_y = _clip_int(m * img_size + b + line_spacing, img_size)
+    top_right_x = _clip_int((top_right_y - (b + line_spacing)) / m, img_size)
+
+    bottom_right_y = _clip_int(m * img_size + b - line_spacing, img_size)
+    bottom_right_x = _clip_int((bottom_right_y - (b - line_spacing)) / m, img_size)
+
+    # Append bounding box for grain boundary to bounding box list
     bounding_boxes.append(
         (classes['gb'],
          bottom_left_x, bottom_left_y,
@@ -129,7 +157,7 @@ def generate_stem_image_with_continuous_gb(
 
             # Rotate atom around its projected GB point
             # new_pos = rotate_about_line(pos, gb_point, angle)
-            new_pos = rotate_about_line(pos, gb_point, 0)
+            new_pos = _rotate_about_line(pos, gb_point, 0)
 
             # Add small random jitter
             array_offset=1
@@ -147,14 +175,21 @@ def generate_stem_image_with_continuous_gb(
     # Draw dumbbell atoms
     for idx, (pos, tilt) in enumerate(atoms):
         if idx in vacancy_set:
+            # bounding_boxes.append(
+            #     (classes['vacancy'],
+            #      pos[0] - line_spacing, pos[1] - line_spacing,
+            #      pos[0] + line_spacing, pos[1] - line_spacing,
+            #      pos[0] + line_spacing, pos[1] + line_spacing,
+            #      pos[0] - line_spacing, pos[1] + line_spacing)
+            # )
+            # print('vacancy position', pos)
             bounding_boxes.append(
                 (classes['vacancy'],
-                 pos[0] - line_spacing, pos[1] - line_spacing,
-                 pos[0] + line_spacing, pos[1] - line_spacing,
-                 pos[0] + line_spacing, pos[1] + line_spacing,
-                 pos[0] - line_spacing, pos[1] + line_spacing)
+                 _clip_int((pos[0] - line_spacing), img_size), _clip_int((pos[1] - line_spacing), img_size),
+                 _clip_int((pos[0] + line_spacing), img_size), _clip_int((pos[1] - line_spacing), img_size),
+                 _clip_int((pos[0] + line_spacing), img_size), _clip_int((pos[1] + line_spacing), img_size),
+                 _clip_int((pos[0] - line_spacing), img_size), _clip_int((pos[1] + line_spacing), img_size))
             )
-            # print('vacancy position', pos)
             continue # skip vacancies
             
         cx, cy = pos
@@ -180,18 +215,25 @@ def generate_stem_image_with_continuous_gb(
     interstitial_sites = list(set(interstitial_sites))
     chosen = random.sample(interstitial_sites,
                            min(n_interstitials, len(interstitial_sites)))
+    
     # chosen = coordinates for interstitial sites
     # Draw interstitial atoms at chosen coordinates
-    box_width = line_spacing / 2
+    box_width = int(math.ceil(line_spacing / 2))
     for x, y in chosen:
         # print('interstitial position:',x,y)
-        bounding_boxes.append(
-            (classes['interstitial'],
-             x - box_width, y - box_width,
-             x + box_width, y - box_width,
-             x + box_width, y + box_width,
-             x - box_width, y + box_width)
-        )
+        # bounding_boxes.append(
+        #     (classes['interstitial'],
+        #      x - box_width, y - box_width,
+        #      x + box_width, y - box_width,
+        #      x + box_width, y + box_width,
+        #      x - box_width, y + box_width)
+        # )
+        bounding_boxes.append((classes['interstitial'],
+             _clip_int((x - box_width), img_size), _clip_int((y - box_width), img_size),
+             _clip_int((x + box_width), img_size), _clip_int((y - box_width), img_size),
+             _clip_int((x + box_width), img_size), _clip_int((y + box_width), img_size),
+             _clip_int((x - box_width), img_size), _clip_int((y + box_width), img_size)))
+        
         rr, cc = disk((y, x), radius=interstitial_r, shape=img.shape)
         img[rr, cc] += atom_intensity * interstitial_intensity
 
@@ -229,6 +271,7 @@ def rotate_flip_image_and_bboxes(image, bounding_boxes, rot, refl):
         rotated_img = rotated_img.transpose(Image.FLIP_TOP_BOTTOM)
 
     transformed_bboxes = []
+
     for box in bounding_boxes:
         cls = box[0]
         coords = np.array(box[1:]).reshape((4, 2))  # reshape to 4 (x,y) points
@@ -259,14 +302,70 @@ def rotate_flip_image_and_bboxes(image, bounding_boxes, rot, refl):
 
     return rotated_img, transformed_bboxes
 
+def yolo_format_bounding_boxes(bounding_boxes, img_size):
+    """
+    Normalize polygon pixel coordinates for YOLO-style OBB / segmentation.
+
+    Input:
+        bounding_boxes: array-like of shape (N, 9)
+            [class, x1, y1, x2, y2, x3, y3, x4, y4]  (pixel coords)
+
+    Output:
+        boxes_norm: (N, 9)
+            [class, x1, y1, x2, y2, x3, y3, x4, y4]  (normalized to [0,1])
+    """
+
+    def _reorder_polygon_clockwise_numpy(pts):
+        """
+        pts: (4, 2) array of polygon points
+        returns: (4, 2) array ordered clockwise
+        """
+        center = pts.mean(axis=0)
+        angles = np.arctan2(pts[:, 1] - center[1],
+                            pts[:, 0] - center[0])
+        order = np.argsort(-angles)  # clockwise
+        return pts[order]
+
+    boxes = np.asarray(bounding_boxes, dtype=float)
+
+    # Split class + polygon
+    classes = boxes[:, 0].astype(int)
+    polys = boxes[:, 1:].reshape(-1, 4, 2)
+
+    # ---- reorder each polygon clockwise ----
+    for i in range(polys.shape[0]):
+        polys[i] = _reorder_polygon_clockwise_numpy(polys[i])
+
+    # ---- normalize ----
+    w = img_size
+    h = img_size
+
+    polys[..., 0] /= w  # x coords
+    polys[..., 1] /= h  # y coords
+
+    polys = polys.reshape(-1, 8)
+
+    # ---- reassemble ----
+    boxes_norm = np.concatenate(
+        [classes[:, None], polys],
+        axis=1
+    )
+
+    return boxes_norm
+
+
 # Path to save generated images
-savepath = r"C:\Users\proks\OneDrive\Documents\GitHub\2025_Hackathon\generated artificial data".replace("\\", "/")
+savepath = r"C:\Users\victa\OneDrive\Documents\GitHub\2025_Hackathon\generated_test_data_2".replace("\\", "/")
 
 seed = 1  # seed for reproducibility
 
 if __name__ == "__main__":
     # Generate fake STEM image
-    img, bounding_boxes, metadata = generate_stem_image_with_continuous_gb(seed=seed)
+    img_sz = 768  
+    img, bounding_boxes, metadata = generate_stem_image_with_continuous_gb(
+                                    seed=seed, img_size=img_sz)
+    yolo_bounding_boxes = yolo_format_bounding_boxes(bounding_boxes, img_sz)
+
 
     # Plot and save image
     figure, axis = plt.subplots(figsize=(5,5), dpi=300)
@@ -292,11 +391,14 @@ if __name__ == "__main__":
     plt.show()
     
     image = Image.fromarray((img * 255).astype(np.uint8))
-    image.save(savepath+'/STEM_' + str(seed) + '.tif')
+    image.save(savepath+'/STEM_' + str(seed) + '.png')
     
-    # Save bounding boxes to CSV
-    bbox_df = pd.DataFrame(bounding_boxes, columns=['class', 'x1', 'y1', 'x2', 'y2', 'x3', 'y3', 'x4', 'y4'])
-    bbox_df.to_csv(savepath+'/STEM_' + str(seed) + '_bboxes.csv', index=False)
+    # Save bounding boxes to text file for yolo input
+    np.savetxt(
+                    savepath+'/STEM_' + str(seed) + '_bboxes.txt',
+                    yolo_bounding_boxes,
+                    fmt='%d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f'
+                )    
     
     # save metadata to CSV
     meta_df = pd.DataFrame([metadata])
@@ -312,14 +414,18 @@ if __name__ == "__main__":
                 continue  # skip original image
             transformed_img, transformed_bboxes = rotate_flip_image_and_bboxes(image, bounding_boxes, rot, refl)
             # import pdb; pdb.set_trace()
+            yolo_transformed_bboxes = yolo_format_bounding_boxes(bounding_boxes, img_sz)
 
             # Save the transformed image
-            transformed_img.save(savepath+'/STEM_' + str(seed) + f'_rot{rot}_refl{refl}.tif')
+            transformed_img.save(savepath+'/STEM_' + str(seed) + f'_rot{rot}_refl{refl}.png')
             
-            # Save transformed bounding boxes to CSV
-            transformed_bboxes_df = pd.DataFrame(transformed_bboxes, columns=['class', 'x1', 'y1', 'x2', 'y2', 'x3', 'y3', 'x4', 'y4'])
-            transformed_bboxes_df.to_csv(savepath+'/STEM_' + str(seed) + f'_rot{rot}_refl{refl}_bboxes.csv', index=False)
-            
+            # Save transformed bounding boxes to txt
+            np.savetxt(
+                    savepath + f'/STEM_{seed}_rot{rot}_refl{refl}_bboxes.txt',
+                    yolo_transformed_bboxes,
+                    fmt='%d %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f'
+                )
+
             # plot and save transformed image with bounding boxes
             figure, axis = plt.subplots(figsize=(5,5), dpi=300)
             axis.imshow(transformed_img, cmap="gray")
