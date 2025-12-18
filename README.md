@@ -16,8 +16,8 @@ A YOLOv11-based defect detection system for microscopy images of CdTe materials,
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/kingbedjed/2025_Hackathon.git
-cd 2025_Hackathon
+git clone https://github.com/kingbedjed/Defect-Detector.git
+cd Defect-Detector
 ```
 
 ### 2. Create Conda Environment
