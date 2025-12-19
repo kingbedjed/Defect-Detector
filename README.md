@@ -1,4 +1,4 @@
-![defect detection gui](defect_detection_gui.jpg)
+![defect detection gui](defect_detection_gui.png)
 
 # Defect Detection System
 
