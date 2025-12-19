@@ -63,8 +63,9 @@ class DefectDetectionGUI:
         self.panning = False
         self.pan_start = None
 
-        # Scale bar artist
+        # Scale bar artists
         self.scale_bar = None
+        self.scale_bar_outline = None
         self.scale_text = None
 
         # Configure style
@@ -362,10 +363,13 @@ class DefectDetectionGUI:
         if self.original_image is None:
             return
 
-        # Remove old scale bar if exists
+        # Remove old scale bar elements if they exist
         if self.scale_bar is not None:
             self.scale_bar.remove()
             self.scale_bar = None
+        if self.scale_bar_outline is not None:
+            self.scale_bar_outline.remove()
+            self.scale_bar_outline = None
         if self.scale_text is not None:
             self.scale_text.remove()
             self.scale_text = None
@@ -413,24 +417,24 @@ class DefectDetectionGUI:
         x_end = xlim[1] - margin_x
         y_pos = ylim[0] - margin_y  # Bottom (note: y-axis is inverted)
 
-        # Draw scale bar (white bar with black outline)
+        # Draw black outline first
+        self.scale_bar_outline = self.ax.plot(
+            [x_start, x_end],
+            [y_pos, y_pos],
+            color='black',
+            linewidth=5,
+            solid_capstyle='butt'
+        )[0]
+
+        # Draw white bar on top
         self.scale_bar = self.ax.plot(
             [x_start, x_end],
             [y_pos, y_pos],
             color='white',
             linewidth=3,
-            solid_capstyle='butt'
-        )[0]
-
-        # Add black outline
-        self.ax.plot(
-            [x_start, x_end],
-            [y_pos, y_pos],
-            color='black',
-            linewidth=5,
             solid_capstyle='butt',
-            zorder=self.scale_bar.get_zorder() - 1
-        )
+            zorder=self.scale_bar_outline.get_zorder() + 1
+        )[0]
 
         # Add text label
         scale_value = scale_length_nm / divisor
