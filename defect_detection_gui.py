@@ -228,7 +228,7 @@ class DefectDetectionGUI:
         self.ax_bar.clear()
         classes = [0, 1, 2]
         counts = [class_counts[0], class_counts[1], class_counts[2]]
-        colors = ['red', 'blue', 'green']
+        colors = ['magenta', 'orange', 'cyan']
         labels = ['Grain\nBoundary', 'Vacancy', 'Interstitial']
 
         bars = self.ax_bar.bar(classes, counts, color=colors, alpha=0.7, edgecolor='black')
@@ -241,7 +241,7 @@ class DefectDetectionGUI:
                                f'{int(count)}',
                                ha='center', va='bottom', fontsize=10, fontweight='bold')
 
-        self.ax_bar.set_title('Defect Counts by Class', fontsize=10, pad=10)
+        self.ax_bar.set_title('Defect Counts by Class', fontsize=15, pad=10)
         self.ax_bar.set_xlabel('Class', fontsize=9)
         self.ax_bar.set_ylabel('Count', fontsize=9)
         self.ax_bar.set_xticks(classes)
@@ -318,7 +318,7 @@ class DefectDetectionGUI:
 
         self.ax.clear()
         self.ax.imshow(image, cmap='gray', interpolation='nearest')
-        self.ax.set_title(title, fontsize=12, pad=10)
+        self.ax.set_title(title, fontsize=18, pad=10)
         self.ax.set_xticks([])
         self.ax.set_yticks([])
 
@@ -338,15 +338,15 @@ class DefectDetectionGUI:
                 x = list(box[1::2])
                 y = list(box[2::2])
                 if cls == 0:
-                    color = 'red'  # grain boundary
+                    color = 'magenta'  # grain boundary
                 elif cls == 1:
-                    color = 'blue' # vacancy
+                    color = 'orange' # vacancy
                 elif cls == 2:
-                    color = 'green' # interstitial
+                    color = 'cyan' # interstitial
                 self.ax.plot(
                     x + [x[0]],
                     y + [y[0]],
-                    color=color, linewidth=.5)
+                    color=color, linewidth=1)
 
         # Update bar chart with class counts
         self.update_bar_chart(bboxes)
