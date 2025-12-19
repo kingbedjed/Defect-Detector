@@ -1,3 +1,5 @@
+![defect detection gui](defect_detection_gui.jpg)
+
 # Defect Detection System
 
 A YOLOv11-based defect detection system for microscopy images of CdTe materials, featuring synthetic training data generation and an interactive GUI for inspection.
@@ -201,6 +203,8 @@ Launch the graphical interface for interactive defect detection and inspection:
 ```bash
 python defect_detection_gui.py
 ```
+
+![Defect Detection GUI](defect_detection_gui.png)
 
 ### Command Line Options
 
