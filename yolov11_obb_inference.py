@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 # Load a model
 # model = YOLO(r"C:\Users\victa\OneDrive\Documents\GitHub\2025_Hackathon\trained_models\yolov11_obb\model_1\weights\best.pt")  # load a pretrained model (recommended for training)
 # model = YOLO(r"C:\Users\victa\OneDrive\Documents\GitHub\2025_Hackathon\trained_models\yolov11_obb\model_2\runs\obb\train2\weights\best.pt")
-model = YOLO(r"C:\Users\victa\OneDrive\Documents\GitHub\2025_Hackathon\trained_models\yolov11_obb\model_3\weights\best.pt")
+model = YOLO(r"C:\Users\victa\OneDrive\Documents\GitHub\2025_Hackathon\trained_models\yolov11_obb\model_4\runs\obb\train2\weights\best.pt")
 real_im = r"C:\Users\victa\OneDrive\Documents\GitHub\2025_Hackathon\CdTe_Training_Image_photoshop_fake_defects_TP.png"
 
 # Train the model
