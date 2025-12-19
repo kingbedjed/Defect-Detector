@@ -39,7 +39,7 @@ The environment includes:
 
 ```bash
 # 1. Generate training data
-python generate_training_data.py
+python generate_training_all_data.py
 
 # 2. Train the model (or use Jupyter notebook)
 jupyter notebook yolov11_obb_train.ipynb
@@ -53,7 +53,7 @@ python defect_detection_gui.py
 The system uses synthetic data to train the defect detection model. Run the data generation script to create training and validation datasets:
 
 ```bash
-python generate_training_data.py
+python generate_training_all_data.py
 ```
 
 ### What It Does
@@ -83,7 +83,7 @@ training_data/
 
 ### Configuration
 
-Edit parameters in `generate_training_data.py`:
+Edit parameters in `generate_training_all_data.py`:
 - `img_size`: Image dimensions (default: 768×768)
 - `num_seeds`: Number of base images (default: 20)
 - `training_split`: Train/validation ratio (default: 0.8)
@@ -214,8 +214,11 @@ python defect_detection_gui.py --debug
 # Custom model path
 python defect_detection_gui.py --model path/to/model.pt
 
+# Custom pixel width for scale bar (default: 22.8 nm)
+python defect_detection_gui.py --pixel-width 20.0
+
 # Combined options
-python defect_detection_gui.py --debug --model path/to/model.pt
+python defect_detection_gui.py --debug --model path/to/model.pt --pixel-width 22.8
 ```
 
 ### GUI Features
@@ -224,6 +227,7 @@ python defect_detection_gui.py --debug --model path/to/model.pt
 - **YOLO Detection**: One-click defect analysis with YOLOv11-OBB
 - **Interactive Zoom**: Mouse wheel to zoom in/out (0.1x to 100x+)
 - **Pan Navigation**: Click-and-drag to explore the image
+- **Dynamic Scale Bar**: Automatically adjusts with zoom level, showing nm, µm, or mm
 - **Visual Overlay**: Color-coded bounding boxes for each defect class:
   - Red: Grain boundaries
   - Blue: Vacancies
@@ -258,6 +262,25 @@ python defect_detection_gui.py --debug --model path/to/model.pt
 | 3x - 5x | Individual defect examination |
 | 5x - 10x | Fine detail inspection |
 | 10x - 20x | Pixel-level analysis |
+
+### Scale Bar
+
+The GUI displays a dynamic scale bar in the bottom-right corner that:
+- Automatically updates when zooming or panning
+- Displays appropriate units (nm, µm, or mm) based on zoom level
+- Uses the pixel width specified with `--pixel-width` (default: 22.8 nm/pixel)
+- Shows approximately 20% of the visible width for easy reference
+
+**Setting Custom Pixel Width:**
+```bash
+# For images with different resolution
+python defect_detection_gui.py --pixel-width 15.5
+```
+
+The scale bar helps you:
+- Measure defect sizes at any zoom level
+- Understand the physical scale of features
+- Maintain spatial awareness while navigating
 
 ### Debug Mode
 
@@ -304,8 +327,8 @@ In debug mode, you can:
 2025_Hackathon/
 ├── main.py                          # CLI defect detection
 ├── defect_detection_gui.py          # GUI application
-├── generate_training_data.py        # Synthetic data generation
-├── generate_synthetic_training_data_TP.py  # Data generation utilities
+├── generate_training_all_data.py        # Synthetic data generation
+├── generate_synthetic_training_data.py  # Data generation utilities
 ├── yolov11_obb_train.ipynb          # Model training notebook
 ├── yolov11_obb_inference.ipynb      # Inference examples
 ├── environment.yml                  # Conda environment
@@ -347,7 +370,7 @@ Override with:
 
 | Task | Command |
 |------|---------|
-| Generate data | `python generate_training_data.py` |
+| Generate data | `python generate_training_all_data.py` |
 | Train model | `jupyter notebook yolov11_obb_train.ipynb` |
 | CLI detection | `python main.py image.tif` |
 | Launch GUI | `python defect_detection_gui.py` |

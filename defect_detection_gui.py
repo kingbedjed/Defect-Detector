@@ -28,13 +28,16 @@ import os
 
 
 class DefectDetectionGUI:
-    def __init__(self, root, debug_mode=False, model_path=None):
+    def __init__(self, root, debug_mode=False, model_path=None, pixel_width=22.8):
         self.root = root
         self.root.title("Defect Detection" + (" [DEBUG MODE]" if debug_mode else ""))
         self.root.geometry("1200x800")
 
         # Debug mode flag
         self.debug_mode = debug_mode
+
+        # Scale bar configuration
+        self.pixel_width = pixel_width  # nanometers per pixel
 
         # Load YOLO model
         if model_path is None:
@@ -59,6 +62,10 @@ class DefectDetectionGUI:
         # Pan state
         self.panning = False
         self.pan_start = None
+
+        # Scale bar artist
+        self.scale_bar = None
+        self.scale_text = None
 
         # Configure style
         self.setup_styles()
@@ -345,7 +352,107 @@ class DefectDetectionGUI:
         self.ax.set_xlim(self.base_xlim)
         self.ax.set_ylim(self.base_ylim)
 
+        # Add scale bar
+        self.update_scale_bar()
+
         self.canvas.draw()
+
+    def update_scale_bar(self):
+        """Update the scale bar based on current zoom level."""
+        if self.original_image is None:
+            return
+
+        # Remove old scale bar if exists
+        if self.scale_bar is not None:
+            self.scale_bar.remove()
+            self.scale_bar = None
+        if self.scale_text is not None:
+            self.scale_text.remove()
+            self.scale_text = None
+
+        # Get current view limits
+        xlim = self.ax.get_xlim()
+        ylim = self.ax.get_ylim()
+
+        # Calculate visible width in pixels
+        visible_width_pixels = abs(xlim[1] - xlim[0])
+
+        # Calculate visible width in nanometers
+        visible_width_nm = visible_width_pixels * self.pixel_width
+
+        # Choose appropriate scale bar length (aim for ~20% of visible width)
+        target_length_nm = visible_width_nm * 0.2
+
+        # Round to nice values
+        if target_length_nm >= 1000000:  # >= 1mm
+            # Use mm
+            scale_options = [1000000, 2000000, 5000000, 10000000]
+            unit = 'mm'
+            divisor = 1000000
+        elif target_length_nm >= 1000:  # >= 1µm
+            # Use µm
+            scale_options = [1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000]
+            unit = 'µm'
+            divisor = 1000
+        else:  # < 1µm
+            # Use nm
+            scale_options = [10, 20, 50, 100, 200, 500]
+            unit = 'nm'
+            divisor = 1
+
+        # Find closest scale option
+        scale_length_nm = min(scale_options, key=lambda x: abs(x - target_length_nm))
+        scale_length_pixels = scale_length_nm / self.pixel_width
+
+        # Position scale bar in bottom-right corner
+        margin_x = visible_width_pixels * 0.05  # 5% margin
+        margin_y = abs(ylim[1] - ylim[0]) * 0.05  # 5% margin
+
+        # Scale bar coordinates
+        x_start = xlim[1] - margin_x - scale_length_pixels
+        x_end = xlim[1] - margin_x
+        y_pos = ylim[0] - margin_y  # Bottom (note: y-axis is inverted)
+
+        # Draw scale bar (white bar with black outline)
+        self.scale_bar = self.ax.plot(
+            [x_start, x_end],
+            [y_pos, y_pos],
+            color='white',
+            linewidth=3,
+            solid_capstyle='butt'
+        )[0]
+
+        # Add black outline
+        self.ax.plot(
+            [x_start, x_end],
+            [y_pos, y_pos],
+            color='black',
+            linewidth=5,
+            solid_capstyle='butt',
+            zorder=self.scale_bar.get_zorder() - 1
+        )
+
+        # Add text label
+        scale_value = scale_length_nm / divisor
+        if scale_value.is_integer():
+            label = f'{int(scale_value)} {unit}'
+        else:
+            label = f'{scale_value:.1f} {unit}'
+
+        # Position text above the scale bar
+        text_y = y_pos - abs(ylim[1] - ylim[0]) * 0.03
+
+        self.scale_text = self.ax.text(
+            (x_start + x_end) / 2,
+            text_y,
+            label,
+            color='white',
+            fontsize=10,
+            fontweight='bold',
+            ha='center',
+            va='bottom',
+            bbox=dict(boxstyle='round,pad=0.3', facecolor='black', edgecolor='none', alpha=0.7)
+        )
 
     def on_scroll(self, event):
         """Handle mouse wheel scroll for zoom."""
@@ -417,6 +524,10 @@ class DefectDetectionGUI:
         # Apply new limits
         self.ax.set_xlim(new_xlim)
         self.ax.set_ylim(new_ylim)
+
+        # Update scale bar for new zoom level
+        self.update_scale_bar()
+
         self.canvas.draw()
 
         # Update zoom level for display
@@ -441,6 +552,10 @@ class DefectDetectionGUI:
         self.ax.set_xlim(self.base_xlim)
         self.ax.set_ylim(self.base_ylim)
         self.zoom_level = 1.0
+
+        # Update scale bar for reset view
+        self.update_scale_bar()
+
         self.canvas.draw()
 
         # Update status bar
@@ -545,6 +660,10 @@ class DefectDetectionGUI:
         # Apply new limits
         self.ax.set_xlim(new_xlim)
         self.ax.set_ylim(new_ylim)
+
+        # Update scale bar for new view
+        self.update_scale_bar()
+
         self.canvas.draw()
 
     def load_bounding_boxes(self):
@@ -693,10 +812,12 @@ def main():
                        help='Enable debug mode (allows loading ground truth bounding box files)')
     parser.add_argument('--model', type=str, default=None,
                        help='Path to YOLO model file (default: trained_models/yolov11_obb/model_1/weights/best.pt)')
+    parser.add_argument('--pixel-width', type=float, default=22.8,
+                       help='Pixel width in nanometers for scale bar (default: 22.8 nm)')
     args = parser.parse_args()
 
     root = tk.Tk()
-    app = DefectDetectionGUI(root, debug_mode=args.debug, model_path=args.model)
+    app = DefectDetectionGUI(root, debug_mode=args.debug, model_path=args.model, pixel_width=args.pixel_width)
     root.mainloop()
 
     return 0
